@@ -1,0 +1,873 @@
+    1)  ,14)       
+Write a program to implement an address book with options given below: a) Create address book. b) View address book. c) Insert a record. d) Delete a record. e) Modify a record. f) Exit
+
+opt=1
+while [ "$opt" -lt 6 ]
+do
+	echo -e "Choose one of the Following\n1. Create a New Address Book\n2. View Records\n3. Insert new Record\n4. Delete a Record\n5. Modify a Record\n6. Exit"
+	# echo -e, enables special features of echo to use \n \t \b etc.
+	read opt
+	case $opt in
+	1)
+		echo "Enter filename"
+		read fileName
+		if [ -e $fileName ] ; then	# -e to check if file exists, if exits remove the file
+			rm $fileName
+		fi
+		cont=1
+		echo  "NAME\tNUMBER\t\tADDRESS\n===============================\n" | cat >> $fileName
+		while [ "$cont" -gt 0 ]
+		do
+			echo "\nEnter Name"
+			read name
+			echo "\nEnter Phone Number of $name"
+			read number
+			echo "\nEnter Address of $name"
+			read address
+			echo "$name\t$number\t$address" | cat >> $fileName
+			echo "Enter 0 to Stop, 1 to Enter next"
+			read cont
+		done
+		;;
+	2)
+		cat $fileName
+		;;
+	3)
+		echo "\nEnter Name"
+		read name
+		echo "\nEnter Phone Number of $name"
+		read number
+		echo "\nEnter Address of $name"
+		read address
+		echo "$name\t$number\t$address" | cat >> $fileName
+		;;
+	4)
+		echo "Delete record\nEnter Name/Phone Number"
+		read pattern
+		temp="temp"
+		grep -v $pattern $fileName | cat >> $temp 
+		rm $fileName
+		cat $temp | cat >> $fileName
+		rm $temp
+		;;
+	5)
+		echo "Modify record\nEnter Name/Phone Number"
+		read pattern
+		temp="temp"
+		grep -v $pattern $fileName | cat >> $temp
+		rm $fileName
+		cat $temp | cat >> $fileName
+		rm $temp
+		echo "Enter Name"
+		read name
+		echo "Enter Phone Number of $name"
+		read number
+		echo "Enter Address of $name"
+		read address
+		echo -e "$name\t$number\t$address" | cat >> $fileName
+		;;
+	esac
+done
+
+
+
+
+
+
+
+
+
+
+
+
+2) ,14) 
+Process control system calls: The demonstration of FORK, EXECVE and WAIT system calls along with zombie and orphan states
+Implement the C program in which main program accepts the integers to be sorted. Main program uses the FORK system call to create a new process called a child process. Parent process sorts the integers using sorting algorithm and waits for child process using WAIT system call to sort the integers using any sorting algorithm. Also demonstrate zombie and orphan states.
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+// Function to perform sorting (you can replace it with any sorting algorithm)
+void bubbleSort(int arr[], int n) {
+    int temp;
+    for (int i = 0; i < n-1; i++) {
+        for (int j = 0; j < n-i-1; j++) {
+            if (arr[j] > arr[j+1]) {
+                // swap
+                temp = arr[j];
+                arr[j] = arr[j+1];
+                arr[j+1] = temp;
+            }
+        }
+    }
+}
+
+int main() {
+    int n;
+
+    // Accept the number of integers to be sorted
+    printf("Enter the number of integers: ");
+    scanf("%d", &n);
+
+    int arr[n];
+
+    // Accept the integers to be sorted
+    printf("Enter %d integers:\n", n);
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &arr[i]);
+    }
+
+    // Create a child process using FORK system call
+    pid_t child_pid = fork();
+
+    if (child_pid < 0) {
+        // Fork failed
+        fprintf(stderr, "Fork failed\n");
+        return 1;
+    } else if (child_pid == 0) {
+        // Child process
+        printf("Child process sorting...\n");
+
+        // Sort the integers in the child process
+        bubbleSort(arr, n);
+
+        // Display the sorted integers
+        printf("Sorted integers in child process: ");
+        for (int i = 0; i < n; i++) {
+            printf("%d ", arr[i]);
+        }
+        printf("\n");
+
+        // Exit the child process
+        exit(0);
+    } else {
+        // Parent process
+
+        // Wait for the child process using WAIT system call
+        int status;
+        pid_t terminated_pid = wait(&status);
+
+        //printf("Parent process: Child process with PID %d has terminated.\n", terminated_pid);
+
+        // Display the original integers in the parent process
+        printf("Original integers in parent process: ");
+        for (int i = 0; i < n; i++) {
+            printf("%d ", arr[i]);
+        }
+        printf("\n");
+
+        // Demonstrate a zombie state
+        sleep(2); // Sleep to allow time for zombie state demonstration
+
+        // Demonstrate an orphan state
+        fork(); // Create an orphan process
+
+        printf("Parent process continues...\n");
+    }
+
+    return 0;
+}
+Orphan Program Code:
+#include <stdio.h> 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+#include <unistd.h>
+int main()
+{ 
+ int pid;
+ pid=getpid(); 
+ printf("Current Process ID is : %d\n",pid); 
+ printf("\n[Forking Child Process ... ] \n"); 
+ pid=fork(); /* This will Create Child Process and Returns   Child's PID */
+ if(pid < 0) 
+ {    
+  printf("\nProcess can not be created ");
+ } 
+ else
+ {
+  if(pid==0)
+  { /* Child Process */
+   printf("\nChild Process is Sleeping ..."); 
+   sleep(5); /*Orphan Child's Parent ID is 1 */
+   printf("\nOrphan Child's Parent ID : %d",getppid()); 
+  }
+  else
+  { /* Parent Process */
+   printf("\nParent Process Completed ..."); 
+  } 
+ }
+ return 0; 
+}
+
+
+Zombie Program Code:
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/types.h>
+
+int main()
+{
+int pid;
+printf("Current Process ID is: %d\n", pid);
+printf("[Forking Child Process ... ]\n");
+pid=fork();
+
+if(pid < 0)
+  {
+    printf("Process can not br cretaed");
+  }
+if(pid > 0)
+  {
+    printf("Parent Process is Sleeping ...");
+    sleep(5);
+    printf("\nID : %d", getppid());
+  }
+else
+  {
+    exit(0);
+  }
+return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+4) ,17)
+
+Implement the C program for CPU Scheduling Algorithms: Shortest Job First (Pre-emptive) and Round Robin with different arrival time.
+
+
+SJF:
+#include <stdio.h>
+  int main() 
+{
+      int arrival_time[10], burst_time[10], temp[10];
+      int i, smallest, count = 0, time, limit;
+      double wait_time = 0, turnaround_time = 0, end;
+      float average_waiting_time, average_turnaround_time;
+      printf("Enter the Total Number of Processes:");
+      scanf("%d", &limit); 
+      printf("\nEnter Details of %d Processes\n", limit);
+      for(i = 0; i < limit; i++)
+      {
+            printf("\nEnter Arrival Time:\t");
+            scanf("%d", &arrival_time[i]);
+            printf("\nEnter Burst Time:\t");
+            scanf("%d", &burst_time[i]); 
+            temp[i] = burst_time[i];
+      }
+      burst_time[9] = 9999;  
+      for(time = 0; count != limit; time++)
+      {
+            smallest = 9;
+            for(i = 0; i < limit; i++)
+            {
+                  if(arrival_time[i] <= time && burst_time[i] < burst_time[smallest] && burst_time[i] > 0)
+                  {
+                        smallest = i;
+                  }
+            }
+            burst_time[smallest]--;
+            if(burst_time[smallest] == 0)
+            {
+                  count++;
+                  end = time + 1;
+                  wait_time = wait_time + end - arrival_time[smallest] - temp[smallest];
+                  turnaround_time = turnaround_time + end - arrival_time[smallest];
+            }
+      }
+      average_waiting_time = wait_time / limit; 
+      average_turnaround_time = turnaround_time / limit;
+      printf("\nAverage Waiting Time:\t%lf\n", average_waiting_time);
+      printf("\nAverage Turnaround Time:\t%lf\n", average_turnaround_time);
+      return 0;
+}
+Round Robin :
+#include<stdio.h>
+ 
+int main()
+{
+ 
+  int cnt,j,n,t,remain,flag=0,tq;
+  int wt=0,tat=0,at[10],bt[10],rt[10];
+  printf("Enter Total Process:\t ");
+  scanf("%d",&n);
+  remain=n;
+  for(cnt=0;cnt<n;cnt++)
+  {
+    printf("Enter Arrival Time and Burst Time for Process Process Number %d :",cnt+1);
+    scanf("%d",&at[cnt]);
+    scanf("%d",&bt[cnt]);
+    rt[cnt]=bt[cnt];
+  }
+  printf("Enter Time Quantum:\t");
+  scanf("%d",&tq);
+  printf("\n\nProcess\t|Turnaround Time|Waiting Time\n\n");
+  for(t=0,cnt=0;remain!=0;)
+  {
+    if(rt[cnt]<=tq && rt[cnt]>0)
+    {
+      t+=rt[cnt];
+      rt[cnt]=0;
+      flag=1;
+    }
+    else if(rt[cnt]>0)
+    {
+      rt[cnt]-=tq;
+      t+=tq;
+    }
+    if(rt[cnt]==0 && flag==1)
+    {
+      remain--;
+      printf("P%d]\t|\t%d\t|\t%d\n",cnt+1,t-at[cnt],t-at[cnt]-bt[cnt]);
+      wt+=t-at[cnt]-bt[cnt];
+      tat+=t-at[cnt];
+      flag=0;
+    }
+    if(cnt==n-1)
+      cnt=0;
+    else if(at[cnt+1]<=t)
+      cnt++;
+    else
+      cnt=0;
+  }
+  printf("\nAverage Waiting Time= %f\n",wt*1.0/n);
+  printf("Avg Turnaround Time = %f",tat*1.0/n);
+  
+  return 0;
+}
+
+
+
+
+
+7)
+Implement the C program for Deadlock Avoidance Algorithm: Bankers Algorithm.
+
+#include<stdio.h>
+ int main() {
+   int p, c, count = 0, i, j, alc[5][3], max[5][3], need[5][3], safe[5], available[3], done[5], terminate = 0;
+  printf("Enter the number of process and resources");
+  scanf("%d %d", & p, & c);
+   printf("enter allocation of resource of all process %dx%d matrix", p, c);
+  for (i = 0; i < p; i++) {
+    for (j = 0; j < c; j++) {
+      scanf("%d", & alc[i][j]);
+    }
+  }
+  printf("enter the max resource process required %dx%d matrix", p, c);
+  for (i = 0; i < p; i++) {
+    for (j = 0; j < c; j++) {
+      scanf("%d", & max[i][j]);
+    }
+  }
+  printf("enter the  available resource");
+  for (i = 0; i < c; i++)
+   scanf("%d", & available[i]);
+  printf("\n need resources matrix are\n");
+   for (i = 0; i < p; i++) 
+{
+    for (j = 0; j < c; j++) 
+  {
+     need[i][j] = max[i][j] - alc[i][j];
+      printf("%d\t", need[i][j]);
+    }
+    printf("\n");
+  }
+   for (i = 0; i < p; i++) {
+    done[i] = 0;
+  }
+  while (count < p) {
+    for (i = 0; i < p; i++) {
+      if (done[i] == 0) {
+        for (j = 0; j < c; j++) {
+          if (need[i][j] > available[j])
+            break;
+         }
+  if (j == c) {
+          safe[count] = i;
+          done[i] = 1;
+          for (j = 0; j < c; j++) {
+            available[j] += alc[i][j];
+          }
+          count++;
+          terminate = 0;
+        } else {
+          terminate++;
+        }
+      }
+    }
+    if (terminate == (p - 1)) {
+      printf("safe sequence does not exist");
+      break;
+    }
+  }
+  if (terminate != (p - 1)) {
+    printf("\n available resource after completion\n");
+    for (i = 0; i < c; i++) {
+      printf("%d\t", available[i]);
+    }
+    printf("\n safe sequence are\n");
+    for (i = 0; i < p; i++) {
+      printf("p%d\t", safe[i]);
+    }
+  }
+  return 0;
+ }
+
+
+
+
+
+
+
+
+
+
+8)
+
+Implement the C program for Page Replacement Algorithms: FCFS, LRU
+
+FCFS:
+#include<stdio.h>
+int main()
+{
+int i,j,n,a[50],frame[10],no,k,avail,count=0;
+            printf("\n ENTER THE NUMBER OF PAGES:\n");
+scanf("%d",&n);
+            printf("\n ENTER THE PAGE NUMBER :\n");
+            for(i=1;i<=n;i++)
+            scanf("%d",&a[i]);
+            printf("\n ENTER THE NUMBER OF FRAMES :");
+            scanf("%d",&no);
+for(i=0;i<no;i++)
+            frame[i]= -1;
+                        j=0;
+                        printf("\tref string\t page frames\n");
+for(i=1;i<=n;i++)
+                        {
+                                    printf("%d\t\t",a[i]);
+                                    avail=0;
+                                    for(k=0;k<no;k++)
+if(frame[k]==a[i])
+                                                avail=1;
+                                    if (avail==0)
+                                    {
+                                                frame[j]=a[i];
+                                                j=(j+1)%no;
+                                                count++;
+                                                for(k=0;k<no;k++)
+                                                printf("%d\t",frame[k]);
+}
+                                    printf("\n");
+}
+                        printf("Page Fault Is %d",count);
+                        return 0;
+}
+
+LRU :
+
+#include<stdio.h>
+ int findLRU(int time[], int n){
+int i, minimum = time[0], pos = 0;
+for(i = 1; i < n; ++i){
+if(time[i] < minimum){
+minimum = time[i];
+pos = i;
+}
+}
+return pos;
+}
+ int main()
+{
+    int no_of_frames, no_of_pages, frames[10], pages[30], counter = 0, time[10], flag1, flag2, i, j, pos, faults = 0;
+printf("Enter number of frames: ");
+scanf("%d", &no_of_frames);
+printf("Enter number of pages: ");
+scanf("%d", &no_of_pages);
+printf("Enter reference string: ");
+    for(i = 0; i < no_of_pages; ++i){
+     scanf("%d", &pages[i]);
+    }
+    for(i = 0; i < no_of_frames; ++i){
+     frames[i] = -1;
+    }
+      for(i = 0; i < no_of_pages; ++i){
+     flag1 = flag2 = 0;
+    
+     for(j = 0; j < no_of_frames; ++j){
+     if(frames[j] == pages[i]){
+     counter++;
+     time[j] = counter;
+   flag1 = flag2 = 1;
+   break;
+   }
+     }
+    
+     if(flag1 == 0){
+for(j = 0; j < no_of_frames; ++j){
+     if(frames[j] == -1){
+     counter++;
+     faults++;
+     frames[j] = pages[i];
+     time[j] = counter;
+     flag2 = 1;
+     break;
+     }
+     }
+     }
+    if(flag2 == 0){
+     pos = findLRU(time, no_of_frames);
+     counter++;
+     faults++;
+     frames[pos] = pages[i];
+     time[pos] = counter;
+     }
+     printf("\n");
+    for(j = 0; j < no_of_frames; ++j){
+     printf("%d\t", frames[j]);
+     }
+}
+printf("\n\nTotal Page Faults = %d", faults);
+       return 0;
+}
+
+
+
+
+10. Inter process communication in Linux using following.
+Inter-process Communication using Shared Memory using System V. Application to demonstrate: Client and Server Programs in which server process creates a shared memory segment and writes the message to the shared memory segment. Client process reads the message from the shared memory segment and displays it to the screen.
+ Server
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#define SHM_SIZE 1024 // Size of the shared memory segment
+int main() {
+ key_t key = ftok("/tmp", 'S'); // Generate a unique key
+ // Create a shared memory segment
+ int shmid = shmget(key, SHM_SIZE, IPC_CREAT | 0666);
+ if (shmid == -1) {
+ perror("shmget");
+ exit(1);
+ }
+ // Attach to the shared memory segment
+ char *shmaddr = shmat(shmid, NULL, 0);
+ if (shmaddr == (char *)-1) {
+ perror("shmat");
+ exit(1);
+ }
+ // Write a message to the shared memory
+ const char *message = "Hello from the server!";
+ strcpy(shmaddr, message);
+ printf("Server wrote message to shared memory: %s\n", message);
+ // Detach from the shared memory
+ shmdt(shmaddr);
+ return 0;
+}
+
+Client
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#define SHM_SIZE 1024 // Size of the shared memory segment
+int main() {
+ key_t key = ftok("/tmp", 'S'); // Use the same key as the server
+ // Get the shared memory segment
+ int shmid = shmget(key, SHM_SIZE, 0666);
+ if (shmid == -1) {
+ perror("shmget");
+ exit(1);
+ }
+ // Attach to the shared memory segment
+ char *shmaddr = shmat(shmid, NULL, 0);
+ if (shmaddr == (char *)-1) {
+ perror("shmat");
+ exit(1);
+ }
+ // Read and display the message from the shared memory
+ printf("Client received message from shared memory: %s\n",
+shmaddr);
+ // Detach from the shared memory
+ shmdt(shmaddr);
+ // Remove the shared memory segment (optional)
+ shmctl(shmid, IPC_RMID, NULL);
+ return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+11)
+Implement the C program for Disk Scheduling Algorithms: SSTF considering the initial head position moving away from the spindle
+
+
+#include<stdio.h>
+#include<stdlib.h>
+int main()
+{
+    int RQ[100],i,n,TotalHeadMoment=0,initial,count=0;
+    printf("Enter the number of Requests\n");
+    scanf("%d",&n);
+    printf("Enter the Requests sequence\n");
+    for(i=0;i<n;i++)
+     scanf("%d",&RQ[i]);
+    printf("Enter initial head position\n");
+    scanf("%d",&initial);
+    // logic for sstf disk scheduling
+     /* loop will execute until all process is completed*/
+    while(count!=n)
+    {
+        int min=1000,d,index;
+        for(i=0;i<n;i++)
+        {
+           d=abs(RQ[i]-initial);
+           if(min>d)
+           {
+               min=d;
+               index=i;
+           }
+           }
+        TotalHeadMoment=TotalHeadMoment+min;
+        initial=RQ[index];
+        // 1000 is for max
+        // you can use any number
+        RQ[index]=1000;
+        count++;
+    }
+    printf("Total head movement is %d",TotalHeadMoment);
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  12)
+Implement the C program for Disk Scheduling Algorithms: SCAN considering the initial head position moving away from the spindle
+
+#include <stdio.h>
+int request[50];
+int SIZE;
+int pre;
+int head;
+int uptrack;
+int downtrack;
+struct max{
+    int up;
+    int down;
+} kate[50];
+int dist(int a, int b){
+    if (a > b)
+        return a - b;
+    return b - a;
+}
+void sort(int n){
+    int i, j;
+    for (i = 0; i < n - 1; i++){
+        for (j = 0; j < n - i - 1; j++){
+            if (request[j] > request[j + 1]){
+                int temp = request[j];
+                request[j] = request[j + 1];
+                request[j + 1] = temp;
+            }
+        }
+    }
+    j = 0;
+    i = 0;
+    while (request[i] != head){
+        kate[j].down = request[i];
+        j++;
+        i++;
+    }
+    downtrack = j;
+    i++;
+    j = 0;
+    while (i < n){
+        kate[j].up = request[i];
+        j++;
+        i++;
+    }
+    uptrack = j;
+}
+void scan(int n){
+    int i;
+    int seekcount = 0;
+    printf("SEEK SEQUENCE = ");
+    sort(n);
+    if (pre < head){
+        for (i = 0; i < uptrack; i++){
+            printf("%d ", head);
+            seekcount = seekcount + dist(head, kate[i].up);
+            head = kate[i].up;
+        }
+        for (i = downtrack - 1; i > 0; i--){
+            printf("%d ", head);
+            seekcount = seekcount + dist(head, kate[i].down);
+            head = kate[i].down;
+        }
+    }
+    else{
+        for (i = downtrack - 1; i >= 0; i--){
+            printf("%d ", head);
+            seekcount = seekcount + dist(head, kate[i].down);
+            head = kate[i].down;
+        }
+        for (i = 0; i < uptrack - 1; i++){
+            printf("%d ", head);
+            seekcount = seekcount + dist(head, kate[i].up);
+            head = kate[i].up;
+        }
+    }
+    printf(" %d\nTOTAL DISTANCE :%d", head, seekcount);
+}
+int main(){
+    int n, i;
+    printf("ENTER THE DISK SIZE :\n");
+    scanf("%d", &SIZE);
+    printf("ENTER THE NO OF REQUEST SEQUENCE :\n");
+    scanf("%d", &n);
+    printf("ENTER THE REQUEST SEQUENCE :\n");
+    for (i = 0; i < n; i++)
+        scanf("%d", &request[i]);
+    printf("ENTER THE CURRENT HEAD :\n");
+    scanf("%d", &head);
+    request[n] = head;
+    request[n + 1] = SIZE - 1;
+    request[n + 2] = 0;
+    printf("ENTER THE PRE REQUEST :\n");
+    scanf("%d", &pre);
+    scan(n + 3);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+13)
+Implement the C program for Disk Scheduling Algorithms: SSTF, SCAN, C-Look considering the initial head position moving away from the spindle
+
+C-look: #include <stdio.h>
+#include <stdlib.h>
+
+// Function to sort the request array in ascending order
+void sort(int arr[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                // Swap arr[j] and arr[j + 1]
+                int temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+}
+
+// Function to simulate C-LOOK disk scheduling algorithm
+void CLOOK(int request[], int n, int head) {
+    sort(request, n); // Sort the request array
+       int seekSequence[n + 1];
+    int seekCount = 0;
+    int currentTrack = head;
+
+    // Find the first request greater than the current head position
+    int firstRequestIndex = 0;
+    for (int i = 0; i < n; i++) {
+        if (request[i] >= currentTrack) {
+            firstRequestIndex = i;
+            break;
+        }
+    }
+
+    // C-LOOK algorithm
+    for (int i = firstRequestIndex; i < n; i++) {
+        seekSequence[seekCount++] = request[i];
+    }
+    for (int i = 0; i < firstRequestIndex; i++) {
+        seekSequence[seekCount++] = request[i];
+    }
+
+    // Print the seek sequence
+    printf("Seek Sequence: ");
+    for (int i = 0; i < n; i++) {
+        printf("%d", seekSequence[i]);
+        if (i != n - 1) {
+            printf(" -> ");
+        }
+    }
+    printf("\n");
+ int totalSeekOperations = 0;
+    for (int i = 0; i < n; i++) {
+        totalSeekOperations += abs(seekSequence[i] - currentTrack);
+        currentTrack = seekSequence[i];
+    }
+   printf("Total seek operations = %d\n", totalSeekOperations);
+}
+int main() {
+    int n, head;
+     printf("Enter the number of requests: ");
+    scanf("%d", &n);
+    int request[n];
+    printf("Enter the request queue:\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &request[i]);
+    }
+ printf("Enter the initial head position: ");
+    scanf("%d", &head);
+ CLOOK(request, n, head);
+  return 0;
+}
